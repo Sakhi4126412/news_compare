@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.figure_factory as ff
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.tree import DecisionTreeClassifier
@@ -36,11 +38,6 @@ def initialize_nltk():
         nltk.data.find('corpora/stopwords')
     except LookupError:
         nltk.download('stopwords', quiet=True)
-    
-    try:
-        nltk.data.find('averaged_perceptron_tagger')
-    except LookupError:
-        nltk.download('averaged_perceptron_tagger', quiet=True)
 
 initialize_nltk()
 
@@ -52,53 +49,145 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for professional UI
+# Custom CSS for enhanced professional UI
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+    
     .main-header {
-        font-size: 3rem;
-        color: #1f77b4;
+        font-size: 3.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
-        margin-bottom: 2rem;
-        font-weight: bold;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        text-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+    
     .sub-header {
-        font-size: 1.5rem;
-        color: #2e86ab;
-        margin-bottom: 1rem;
+        font-size: 1.8rem;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
         font-weight: 600;
+        border-left: 5px solid #667eea;
+        padding-left: 1rem;
     }
+    
     .metric-card {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        border-left: 4px solid #1f77b4;
-        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        color: white;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
     }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    
     .humor-section {
-        background-color: #fff3cd;
-        padding: 1.5rem;
-        border-radius: 10px;
-        border-left: 4px solid #ffc107;
-        margin: 1rem 0;
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        margin: 1.5rem 0;
         font-style: italic;
+        border-left: 5px solid #ff6b6b;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
     }
+    
     .fact-check-card {
-        background-color: #e7f3ff;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        border: 1px solid #b3d9ff;
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        margin: 1.5rem 0;
+        border: none;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     }
-    .stProgress > div > div > div > div {
-        background-color: #1f77b4;
-    }
+    
     .warning-box {
-        background-color: #fff3cd;
-        border: 1px solid #ffc107;
-        border-radius: 5px;
-        padding: 1rem;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 1.5rem;
         margin: 1rem 0;
+        border-left: 5px solid #ffd43b;
+    }
+    
+    .success-box {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-left: 5px solid #28a745;
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-left: 5px solid #17a2b8;
+    }
+    
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .sidebar .sidebar-content {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .stButton button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .feature-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea;
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateX(5px);
+    }
+    
+    .model-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-top: 4px solid;
+        transition: all 0.3s ease;
+    }
+    
+    .model-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -107,42 +196,100 @@ class PolitifactScraper:
     def __init__(self):
         self.base_url = "https://www.politifact.com"
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
     
     def scrape_facts(self, start_date, end_date, max_pages=3):
         """Scrape Politifact data within date range - DEMO VERSION"""
-        st.warning("🔒 For demonstration purposes, using sample data. In production, this would scrape real Politifact data.")
+        st.markdown('<div class="warning-box">', unsafe_allow_html=True)
+        st.warning("🔒 **Demo Mode**: Using sample data for demonstration. In production, this would scrape real-time data from Politifact.")
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        # Return comprehensive sample data
-        return self.get_sample_data()
+        return self.get_comprehensive_sample_data()
     
-    def get_sample_data(self):
-        """Generate comprehensive sample data for demonstration"""
-        sample_statements = [
-            # True statements
-            {'statement': 'The Earth orbits around the Sun in approximately 365 days.', 'rating': 'true', 'date': datetime(2024, 1, 15)},
-            {'statement': 'Regular exercise has been proven to improve cardiovascular health and mental wellbeing.', 'rating': 'true', 'date': datetime(2024, 1, 14)},
-            {'statement': 'Vaccines have significantly reduced the incidence of infectious diseases worldwide.', 'rating': 'mostly-true', 'date': datetime(2024, 1, 13)},
-            {'statement': 'Climate change is causing global temperatures to rise at an unprecedented rate.', 'rating': 'true', 'date': datetime(2024, 1, 12)},
-            {'statement': 'The Great Barrier Reef is the worlds largest coral reef system.', 'rating': 'true', 'date': datetime(2024, 1, 11)},
+    def get_comprehensive_sample_data(self):
+        """Generate comprehensive and realistic sample data"""
+        sample_data = [
+            # True statements with realistic content
+            {
+                'statement': 'NASA confirmed that 2023 was the hottest year on record globally, with temperatures 1.4°C above pre-industrial levels.',
+                'rating': 'true', 
+                'date': datetime(2024, 1, 15),
+                'category': 'Environment'
+            },
+            {
+                'statement': 'Regular physical activity can reduce the risk of depression and anxiety by up to 30% according to WHO studies.',
+                'rating': 'mostly-true', 
+                'date': datetime(2024, 1, 14),
+                'category': 'Health'
+            },
+            {
+                'statement': 'The James Webb Space Telescope has discovered galaxies that formed less than 400 million years after the Big Bang.',
+                'rating': 'true', 
+                'date': datetime(2024, 1, 13),
+                'category': 'Science'
+            },
             
             # False statements
-            {'statement': 'The Moon is made entirely of green cheese and is inhabited by mice.', 'rating': 'false', 'date': datetime(2024, 1, 10)},
-            {'statement': 'Drinking bleach can cure COVID-19 and other viral infections.', 'rating': 'false', 'date': datetime(2024, 1, 9)},
-            {'statement': 'The Earth is flat and surrounded by an ice wall that prevents us from falling off.', 'rating': 'pants-fire', 'date': datetime(2024, 1, 8)},
-            {'statement': '5G networks spread coronavirus through radio waves and mind control.', 'rating': 'false', 'date': datetime(2024, 1, 7)},
-            {'statement': 'Humans only use 10% of their brains capacity according to scientific studies.', 'rating': 'false', 'date': datetime(2024, 1, 6)},
+            {
+                'statement': 'Drinking alkaline water can cure cancer and reverse aging by changing your body pH levels permanently.',
+                'rating': 'false', 
+                'date': datetime(2024, 1, 12),
+                'category': 'Health'
+            },
+            {
+                'statement': '5G towers are government surveillance devices that can control human thoughts through radio waves.',
+                'rating': 'pants-fire', 
+                'date': datetime(2024, 1, 11),
+                'category': 'Technology'
+            },
+            {
+                'statement': 'The COVID-19 vaccine contains microchips that allow Bill Gates to track people worldwide.',
+                'rating': 'false', 
+                'date': datetime(2024, 1, 10),
+                'category': 'Health'
+            },
             
-            # Mixed statements
-            {'statement': 'Chocolate consumption helps with weight loss when combined with specific diets.', 'rating': 'half-true', 'date': datetime(2024, 1, 5)},
-            {'statement': 'Reading in dim light permanently damages your eyesight over time.', 'rating': 'mostly-false', 'date': datetime(2024, 1, 4)},
-            {'statement': 'Shark attacks are more common than deaths from falling coconuts.', 'rating': 'true', 'date': datetime(2024, 1, 3)},
-            {'statement': 'You need to drink eight glasses of water per day for optimal health.', 'rating': 'mostly-true', 'date': datetime(2024, 1, 2)},
-            {'statement': 'Cracking your knuckles leads to arthritis in later life.', 'rating': 'false', 'date': datetime(2024, 1, 1)},
+            # Mixed accuracy statements
+            {
+                'statement': 'Eating chocolate every day helps you lose weight by boosting metabolism significantly.',
+                'rating': 'half-true', 
+                'date': datetime(2024, 1, 9),
+                'category': 'Health'
+            },
+            {
+                'statement': 'Artificial intelligence will replace 50% of all jobs within the next two years.',
+                'rating': 'mostly-false', 
+                'date': datetime(2024, 1, 8),
+                'category': 'Technology'
+            },
+            {
+                'statement': 'Renewable energy sources now provide over 80% of global electricity demand.',
+                'rating': 'false', 
+                'date': datetime(2024, 1, 7),
+                'category': 'Environment'
+            },
+            {
+                'statement': 'The Great Pyramid of Giza was built by aliens using advanced technology not available to ancient Egyptians.',
+                'rating': 'pants-fire', 
+                'date': datetime(2024, 1, 6),
+                'category': 'History'
+            },
+            {
+                'statement': 'Meditation and mindfulness practices can reduce stress and improve focus in workplace settings.',
+                'rating': 'true', 
+                'date': datetime(2024, 1, 5),
+                'category': 'Health'
+            },
+            {
+                'statement': 'Electric vehicles produce more carbon emissions than gasoline cars when accounting for battery production.',
+                'rating': 'mostly-false', 
+                'date': datetime(2024, 1, 4),
+                'category': 'Environment'
+            }
         ]
         
-        return sample_statements
+        return sample_data
 
 class NLPAnalyzer:
     def __init__(self):
@@ -152,142 +299,185 @@ class NLPAnalyzer:
             self.stop_words = set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'])
     
     def preprocess_text(self, text):
-        """Basic text preprocessing with robust error handling"""
+        """Enhanced text preprocessing"""
         if not isinstance(text, str) or not text.strip():
             return ""
         
         try:
-            # Convert to lowercase and remove special characters
-            text = re.sub(r'[^a-zA-Z\s]', '', text.lower())
+            # Convert to lowercase
+            text = text.lower()
             
-            # Simple tokenization (fallback if NLTK fails)
+            # Remove URLs, special characters, and extra spaces
+            text = re.sub(r'http\S+', '', text)
+            text = re.sub(r'[^a-zA-Z\s]', '', text)
+            text = re.sub(r'\s+', ' ', text).strip()
+            
+            # Tokenization with fallback
             try:
                 tokens = word_tokenize(text)
             except:
                 tokens = text.split()
             
-            # Remove stopwords
+            # Remove stopwords and short tokens
             tokens = [token for token in tokens if token not in self.stop_words and len(token) > 2]
             
             return ' '.join(tokens)
         except Exception as e:
-            st.error(f"Text preprocessing error: {str(e)}")
-            return text.lower()  # Fallback to simple lowercase
+            return text.lower()
     
     def analyze_sentiment(self, text):
-        """Analyze sentiment using TextBlob with error handling"""
+        """Enhanced sentiment analysis"""
         try:
             analysis = TextBlob(text)
-            return analysis.sentiment.polarity
+            polarity = analysis.sentiment.polarity
+            subjectivity = analysis.sentiment.subjectivity
+            
+            return {
+                'polarity': polarity,
+                'subjectivity': subjectivity,
+                'label': 'Positive' if polarity > 0.1 else 'Negative' if polarity < -0.1 else 'Neutral'
+            }
         except:
-            return 0.0  # Neutral sentiment as fallback
+            return {'polarity': 0.0, 'subjectivity': 0.0, 'label': 'Neutral'}
     
-    def extract_features(self, text):
-        """Extract basic text features with error handling"""
+    def extract_linguistic_features(self, text):
+        """Extract comprehensive linguistic features"""
         try:
             words = text.split()
+            sentences = text.split('.')
+            
+            # Calculate readability metrics (simplified)
+            avg_sentence_length = len(words) / len(sentences) if len(sentences) > 1 else len(words)
+            avg_word_length = np.mean([len(word) for word in words]) if words else 0
+            
+            # Count specific word types
+            long_words = [word for word in words if len(word) > 6]
+            unique_words = set(words)
+            
             return {
                 'word_count': len(words),
+                'sentence_count': len([s for s in sentences if s.strip()]),
                 'char_count': len(text),
-                'avg_word_length': np.mean([len(word) for word in words]) if words else 0,
-                'sentiment': self.analyze_sentiment(text)
+                'avg_word_length': avg_word_length,
+                'avg_sentence_length': avg_sentence_length,
+                'unique_word_ratio': len(unique_words) / len(words) if words else 0,
+                'long_word_ratio': len(long_words) / len(words) if words else 0,
+                'lexical_diversity': len(unique_words) / len(words) if words else 0
             }
         except:
             return {
-                'word_count': 0,
-                'char_count': 0,
-                'avg_word_length': 0,
-                'sentiment': 0.0
+                'word_count': 0, 'sentence_count': 0, 'char_count': 0,
+                'avg_word_length': 0, 'avg_sentence_length': 0,
+                'unique_word_ratio': 0, 'long_word_ratio': 0, 'lexical_diversity': 0
             }
 
 class TruthDetector:
     def __init__(self):
-        self.vectorizer = TfidfVectorizer(max_features=500, stop_words='english')
+        self.vectorizer = TfidfVectorizer(max_features=1000, stop_words='english', ngram_range=(1, 2))
         self.models = {
-            'Decision Tree': DecisionTreeClassifier(random_state=42, max_depth=5),
-            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-            'Naive Bayes': MultinomialNB(),
-            'SVM': SVC(random_state=42, probability=True, kernel='linear')
+            'Decision Tree': DecisionTreeClassifier(random_state=42, max_depth=8),
+            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000, C=1.0),
+            'Naive Bayes': MultinomialNB(alpha=0.1),
+            'SVM': SVC(random_state=42, probability=True, kernel='linear', C=0.1)
         }
         self.results = {}
+        self.training_history = {}
     
     def prepare_data(self, data):
-        """Prepare data for training with robust error handling"""
+        """Enhanced data preparation"""
         try:
             df = pd.DataFrame(data)
             
-            # Preprocess text
+            # Enhanced preprocessing
             analyzer = NLPAnalyzer()
             df['processed_text'] = df['statement'].apply(analyzer.preprocess_text)
             
-            # Convert ratings to binary (True vs False)
-            true_ratings = ['true', 'mostly-true', 'half-true']
-            df['is_true'] = df['rating'].apply(
-                lambda x: 1 if any(true in str(x).lower() for true in true_ratings) else 0
-            )
+            # Convert ratings to binary (True vs False/Mixed)
+            true_ratings = ['true', 'mostly-true']
+            false_ratings = ['false', 'pants-fire', 'mostly-false']
+            half_true_ratings = ['half-true']
             
-            # Ensure we have enough data
-            if len(df) < 5:
-                st.error("Insufficient data for training. Please add more samples.")
-                return None, None, None
+            def map_rating(rating):
+                if rating in true_ratings:
+                    return 2  # True
+                elif rating in false_ratings:
+                    return 0  # False
+                else:
+                    return 1  # Mixed/Half-true
+            
+            df['truth_score'] = df['rating'].apply(map_rating)
+            df['is_true_binary'] = df['truth_score'].apply(lambda x: 1 if x == 2 else 0)
             
             # Vectorize text
-            try:
-                X_text = self.vectorizer.fit_transform(df['processed_text'])
-            except:
-                # Fallback: use simple count vectorizer
-                from sklearn.feature_extraction.text import CountVectorizer
-                self.vectorizer = CountVectorizer(max_features=100)
-                X_text = self.vectorizer.fit_transform(df['processed_text'])
+            X_text = self.vectorizer.fit_transform(df['processed_text'])
             
-            # Add additional features
-            features = []
+            # Extract comprehensive features
+            features_list = []
             for text in df['statement']:
-                feat = analyzer.extract_features(text)
-                features.append([feat['word_count'], feat['char_count'], 
-                               feat['avg_word_length'], feat['sentiment']])
+                linguistic_feat = analyzer.extract_linguistic_features(text)
+                sentiment_feat = analyzer.analyze_sentiment(text)
+                
+                features = [
+                    linguistic_feat['word_count'],
+                    linguistic_feat['sentence_count'],
+                    linguistic_feat['char_count'],
+                    linguistic_feat['avg_word_length'],
+                    linguistic_feat['avg_sentence_length'],
+                    linguistic_feat['unique_word_ratio'],
+                    linguistic_feat['long_word_ratio'],
+                    linguistic_feat['lexical_diversity'],
+                    sentiment_feat['polarity'],
+                    sentiment_feat['subjectivity']
+                ]
+                features_list.append(features)
             
-            X_features = np.array(features)
+            X_features = np.array(features_list)
+            X_combined = np.hstack([X_text.toarray(), X_features])
             
-            # Handle case where vectorization might fail
-            if X_text.shape[1] == 0:
-                X_combined = X_features
-            else:
-                X_combined = np.hstack([X_text.toarray(), X_features])
-            
-            y = df['is_true']
-            
-            return X_combined, y, df
+            return X_combined, df['is_true_binary'], df
             
         except Exception as e:
-            st.error(f"Error preparing data: {str(e)}")
+            st.error(f"Data preparation error: {str(e)}")
             return None, None, None
     
     def train_models(self, X, y):
-        """Train all models and store results with error handling"""
+        """Enhanced model training with performance tracking"""
         if X is None or y is None:
             return {}
         
         try:
             X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.3, random_state=42, stratify=y
+                X, y, test_size=0.25, random_state=42, stratify=y
             )
             
             for name, model in self.models.items():
                 try:
+                    # Train model
+                    start_time = time.time()
                     model.fit(X_train, y_train)
-                    y_pred = model.predict(X_test)
-                    accuracy = accuracy_score(y_test, y_pred)
+                    training_time = time.time() - start_time
                     
+                    # Predictions
+                    y_pred = model.predict(X_test)
+                    y_pred_proba = model.predict_proba(X_test)[:, 1] if hasattr(model, 'predict_proba') else None
+                    
+                    # Calculate metrics
+                    accuracy = accuracy_score(y_test, y_pred)
+                    cm = confusion_matrix(y_test, y_pred)
+                    
+                    # Store results
                     self.results[name] = {
                         'model': model,
                         'accuracy': accuracy,
+                        'training_time': training_time,
                         'y_test': y_test,
-                        'y_pred': y_pred
+                        'y_pred': y_pred,
+                        'y_pred_proba': y_pred_proba,
+                        'confusion_matrix': cm
                     }
                     
                 except Exception as model_error:
-                    st.warning(f"Model {name} failed to train: {str(model_error)}")
+                    st.warning(f"Model {name} training skipped: {str(model_error)}")
                     continue
             
             return self.results
@@ -296,98 +486,231 @@ class TruthDetector:
             st.error(f"Training error: {str(e)}")
             return {}
 
-def generate_humorous_critique(statement, prediction, confidence):
-    """Generate humorous critique based on prediction"""
+def generate_humorous_critique(statement, prediction, confidence, features):
+    """Generate enhanced humorous critiques with personality"""
     
-    jokes = {
-        'true': [
-            "This statement is so true, even my algorithm blushed! 🤖",
-            "Truth detected! More reliable than my morning coffee. ☕",
-            "This fact is solid - like grandma's cooking! 🍲",
-            "Verified! Even the fact-checker's fact-checker approves. ✅",
-            "So true, it made my binary heart skip a beat! 01010111💖"
+    truth_jokes = {
+        'high_confidence_true': [
+            "🎯 Bullseye! This statement is so true, even my algorithms are impressed!",
+            "✅ Verified! More reliable than your morning alarm clock!",
+            "🏆 Truth champion! This fact could win awards for accuracy!",
+            "🌟 Stellar accuracy! Even the fact-checker's fact-checker approves!",
+            "💎 Diamond-grade truth! This statement is polished to perfection!"
         ],
-        'false': [
-            "This statement is stretching the truth more than yoga pants! 🧘",
-            "False alert! This claim has more holes than Swiss cheese! 🧀",
-            "This 'fact' is about as accurate as a weather forecast! ⛈️",
-            "Warning: This statement may cause spontaneous eyebrow raises! 🤨",
-            "So false, even my fake-news detector is offended! 🚨"
+        'medium_confidence_true': [
+            "📗 Likely true! I'd bet my virtual coffee on this one!",
+            "👍 Looking good! This statement passes the sniff test!",
+            "🔍 Promising! More reliable than weather forecasts!",
+            "📚 Educated guess: This seems legit!",
+            "🎲 Probably true! Better odds than lottery tickets!"
+        ],
+        'high_confidence_false': [
+            "🚨 False alarm! This statement has more red flags than a matador convention!",
+            "🎭 Pure fiction! More made-up than my excuses for being late!",
+            "🧀 Full of holes! Swiss cheese is more solid than this claim!",
+            "🌈 Unicorn territory! This is more fantasy than reality!",
+            "🎪 Circus act! This claim is juggling too many falsehoods!"
+        ],
+        'medium_confidence_false': [
+            "🤔 Suspicious! This smells fishier than a seafood market!",
+            "⚠️ Dubious claim! I'm getting 'alternative facts' vibes!",
+            "🎈 Inflated truth! This balloon is about to pop!",
+            "🕵️ Investigate further! My truth-o-meter is twitching!",
+            "📉 Questionable! This claim is on shaky ground!"
         ]
     }
     
-    category = 'true' if prediction == 1 else 'false'
-    joke = np.random.choice(jokes[category])
+    # Determine joke category
+    if prediction == 1:
+        category = 'high_confidence_true' if confidence > 0.8 else 'medium_confidence_true'
+    else:
+        category = 'high_confidence_false' if confidence > 0.8 else 'medium_confidence_false'
     
-    confidence_comment = ""
-    if confidence > 0.8:
-        confidence_comment = " (I'm more confident about this than my Wi-Fi password!)"
-    elif confidence < 0.6:
-        confidence_comment = " (Take this with a grain of salt... and maybe some tequila!)"
+    joke = np.random.choice(truth_jokes[category])
     
-    return f"**Humorous Verdict:** {joke}{confidence_comment}"
+    # Add feature-based humor
+    word_count = features.get('word_count', 0)
+    if word_count > 50:
+        joke += " And it's quite the mouthful! 🗣️"
+    elif word_count < 10:
+        joke += " Short and... questionable! 📝"
+    
+    sentiment = features.get('sentiment', {}).get('polarity', 0)
+    if sentiment > 0.3:
+        joke += " Positively misleading! 😊"
+    elif sentiment < -0.3:
+        joke += " Negatively charged! ⚡"
+    
+    return joke
 
-def create_visualizations(results, data):
-    """Create performance visualizations with error handling"""
+def create_enhanced_visualizations(results, data):
+    """Create stunning visualizations with Plotly"""
     
     try:
-        # Model accuracy comparison
+        # Convert data to DataFrame
+        df = pd.DataFrame(data)
+        
+        # 1. Model Performance Radar Chart
         if results:
-            fig1 = go.Figure(data=[
-                go.Bar(name='Accuracy', 
-                       x=list(results.keys()), 
-                       y=[result['accuracy'] for result in results.values()],
-                       marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
-            ])
-            fig1.update_layout(
-                title='Model Performance Comparison',
-                xaxis_title='Models',
-                yaxis_title='Accuracy',
+            models = list(results.keys())
+            accuracies = [results[model]['accuracy'] for model in models]
+            training_times = [results[model]['training_time'] for model in models]
+            
+            # Normalize training times for radar chart
+            max_time = max(training_times) if training_times else 1
+            norm_times = [t/max_time for t in training_times]
+            
+            fig_radar = go.Figure()
+            
+            fig_radar.add_trace(go.Scatterpolar(
+                r=accuracies + [accuracies[0]],
+                theta=models + [models[0]],
+                fill='toself',
+                name='Accuracy',
+                line=dict(color='#667eea')
+            ))
+            
+            fig_radar.add_trace(go.Scatterpolar(
+                r=norm_times + [norm_times[0]],
+                theta=models + [models[0]],
+                fill='toself',
+                name='Training Speed (normalized)',
+                line=dict(color='#ff6b6b')
+            ))
+            
+            fig_radar.update_layout(
+                polar=dict(
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 1]
+                    )),
+                showlegend=True,
+                title='Model Performance Radar Chart',
                 template='plotly_white'
             )
-        else:
-            fig1 = go.Figure()
-            fig1.update_layout(title='No model results available')
         
-        # Rating distribution
-        if isinstance(data, pd.DataFrame) and 'rating' in data.columns:
-            rating_counts = data['rating'].value_counts()
-            fig2 = px.pie(values=rating_counts.values, 
-                          names=rating_counts.index,
-                          title='Fact Check Rating Distribution',
-                          color_discrete_sequence=px.colors.sequential.Blues_r)
-        else:
-            fig2 = px.pie(values=[1], names=['Sample'], title='Sample Data Distribution')
+        # 2. Enhanced Rating Distribution with Donut Chart
+        rating_counts = df['rating'].value_counts()
+        colors = px.colors.qualitative.Set3
         
-        # Confusion matrix for best model
+        fig_donut = px.pie(
+            values=rating_counts.values,
+            names=rating_counts.index,
+            title='Fact Check Rating Distribution',
+            hole=0.4,
+            color_discrete_sequence=colors
+        )
+        fig_donut.update_traces(textposition='inside', textinfo='percent+label')
+        fig_donut.update_layout(showlegend=False)
+        
+        # 3. Interactive Model Comparison
+        if results:
+            fig_comparison = go.Figure(data=[
+                go.Bar(
+                    name='Accuracy', 
+                    x=list(results.keys()), 
+                    y=[result['accuracy'] for result in results.values()],
+                    marker_color='#667eea',
+                    text=[f'{acc:.3f}' for acc in [result['accuracy'] for result in results.values()]],
+                    textposition='auto',
+                ),
+                go.Bar(
+                    name='Training Time (s)',
+                    x=list(results.keys()),
+                    y=[result['training_time'] for result in results.values()],
+                    marker_color='#ff6b6b',
+                    text=[f'{t:.2f}s' for t in [result['training_time'] for result in results.values()]],
+                    textposition='auto',
+                    yaxis='y2'
+                )
+            ])
+            
+            fig_comparison.update_layout(
+                title='Model Performance Comparison',
+                xaxis_title='Models',
+                yaxis=dict(title='Accuracy', range=[0, 1]),
+                yaxis2=dict(title='Training Time (seconds)', overlaying='y', side='right'),
+                template='plotly_white',
+                showlegend=True
+            )
+        
+        # 4. Category Distribution Sunburst
+        category_rating = df.groupby(['category', 'rating']).size().reset_index(name='count')
+        fig_sunburst = px.sunburst(
+            category_rating,
+            path=['category', 'rating'],
+            values='count',
+            title='Statement Categories & Ratings',
+            color='count',
+            color_continuous_scale='Viridis'
+        )
+        
+        # 5. Best Model Confusion Matrix
         if results:
             best_model_name = max(results.keys(), key=lambda x: results[x]['accuracy'])
             best_result = results[best_model_name]
-            cm = confusion_matrix(best_result['y_test'], best_result['y_pred'])
+            cm = best_result['confusion_matrix']
             
-            fig3 = go.Figure(data=go.Heatmap(
+            fig_cm = ff.create_annotated_heatmap(
                 z=cm,
                 x=['Predicted False', 'Predicted True'],
                 y=['Actual False', 'Actual True'],
                 colorscale='Blues',
                 showscale=True
-            ))
-            fig3.update_layout(title=f'Confusion Matrix - {best_model_name}')
-        else:
-            fig3 = go.Figure()
-            fig3.update_layout(title='No confusion matrix available')
+            )
+            fig_cm.update_layout(title=f'Confusion Matrix - {best_model_name}')
         
-        return fig1, fig2, fig3
+        return fig_radar, fig_donut, fig_comparison, fig_sunburst, fig_cm
         
     except Exception as e:
         st.error(f"Visualization error: {str(e)}")
-        # Return empty figures
-        return go.Figure(), go.Figure(), go.Figure()
+        return go.Figure(), go.Figure(), go.Figure(), go.Figure(), go.Figure()
+
+def create_feature_analysis_visualization(analyzer, text):
+    """Create feature analysis visualization for a given text"""
+    features = analyzer.extract_linguistic_features(text)
+    sentiment = analyzer.analyze_sentiment(text)
+    
+    # Create feature radar chart
+    categories = ['Word Count', 'Sentence Count', 'Avg Word Length', 
+                 'Unique Words', 'Long Words', 'Lexical Diversity']
+    
+    values = [
+        min(features['word_count'] / 100, 1),  # Normalize
+        min(features['sentence_count'] / 10, 1),
+        min(features['avg_word_length'] / 10, 1),
+        features['unique_word_ratio'],
+        features['long_word_ratio'],
+        features['lexical_diversity']
+    ]
+    
+    fig_radar = go.Figure(data=go.Scatterpolar(
+        r=values + [values[0]],
+        theta=categories + [categories[0]],
+        fill='toself',
+        fillcolor='rgba(102, 126, 234, 0.3)',
+        line=dict(color='#667eea'),
+        name='Text Features'
+    ))
+    
+    fig_radar.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 1])
+        ),
+        showlegend=False,
+        title='Linguistic Feature Analysis'
+    )
+    
+    return fig_radar, features, sentiment
 
 def main():
-    # Header
-    st.markdown('<div class="main-header">🔍 TruthDetector AI</div>', unsafe_allow_html=True)
-    st.markdown("### Advanced Fact-Checking with NLP and Machine Learning")
+    # Enhanced Header with Gradient
+    st.markdown("""
+    <div style='text-align: center; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; margin-bottom: 2rem;'>
+        <h1 style='color: white; font-size: 3.5rem; margin: 0;'>🔍 TruthDetector AI</h1>
+        <p style='color: white; font-size: 1.2rem; opacity: 0.9;'>Advanced Fact-Checking with NLP & Machine Learning</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Initialize session state
     if 'scraped_data' not in st.session_state:
@@ -397,342 +720,378 @@ def main():
     if 'results' not in st.session_state:
         st.session_state.results = None
     
-    # Sidebar
-    st.sidebar.title("Navigation")
-    app_section = st.sidebar.radio("Go to:", 
-                                   ["Data Collection", "NLP Analysis", 
-                                    "Model Performance", "Fact Checker", "About"])
+    # Enhanced Sidebar
+    with st.sidebar:
+        st.markdown("""
+        <div style='text-align: center; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; margin-bottom: 2rem;'>
+            <h3 style='color: white; margin: 0;'>🧭 Navigation</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        app_section = st.radio(
+            "",
+            ["🏠 Dashboard", "📊 Data Collection", "🔤 NLP Analysis", 
+             "📈 Model Performance", "🔍 Fact Checker", "ℹ️ About"],
+            label_visibility="collapsed"
+        )
+        
+        st.markdown("---")
+        
+        # Quick Stats
+        if st.session_state.scraped_data:
+            st.markdown("### 📈 Quick Stats")
+            true_count = len([s for s in st.session_state.scraped_data 
+                            if s['rating'] in ['true', 'mostly-true']])
+            false_count = len([s for s in st.session_state.scraped_data 
+                             if s['rating'] in ['false', 'pants-fire', 'mostly-false']])
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("True", true_count)
+            with col2:
+                st.metric("False", false_count)
+        
+        st.markdown("---")
+        st.markdown("### ⚠️ Disclaimer")
+        st.markdown("""
+        <div class='info-box'>
+        This is a demonstration app for educational purposes. 
+        Always verify facts through multiple reliable sources.
+        </div>
+        """, unsafe_allow_html=True)
     
-    # Add disclaimer
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### ⚠️ Disclaimer")
-    st.sidebar.info(
-        "This is a demonstration app for educational purposes. "
-        "Always verify facts through multiple reliable sources."
-    )
+    # Main Content Sections
+    if app_section == "🏠 Dashboard":
+        show_dashboard()
+    elif app_section == "📊 Data Collection":
+        show_data_collection()
+    elif app_section == "🔤 NLP Analysis":
+        show_nlp_analysis()
+    elif app_section == "📈 Model Performance":
+        show_model_performance()
+    elif app_section == "🔍 Fact Checker":
+        show_fact_checker()
+    else:  # About
+        show_about()
+
+def show_dashboard():
+    """Enhanced Dashboard View"""
+    st.markdown('<div class="sub-header">🏠 Dashboard Overview</div>', unsafe_allow_html=True)
     
-    if app_section == "Data Collection":
-        st.markdown('<div class="sub-header">📊 Data Collection</div>', unsafe_allow_html=True)
+    # Welcome section
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("""
+        <div class='info-box'>
+        <h3>🚀 Welcome to TruthDetector AI</h3>
+        <p>Your comprehensive solution for automated fact-checking using cutting-edge 
+        Natural Language Processing and Machine Learning technologies.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class='feature-card'>
+        <h4>🎯 Key Features</h4>
+        <ul>
+        <li>Advanced NLP Analysis</li>
+        <li>Multiple ML Models</li>
+        <li>Real-time Fact Checking</li>
+        <li>Visual Analytics</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Quick start cards
+    st.markdown("### 🚀 Quick Start")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        with st.container():
+            st.markdown("""
+            <div class='model-card' style='border-top-color: #667eea;'>
+            <h4>📊 Load Data</h4>
+            <p>Start by loading sample fact-checked data to train your models.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Go to Data", key="data_btn"):
+                st.session_state.current_section = "Data Collection"
+                st.rerun()
+    
+    with col2:
+        with st.container():
+            st.markdown("""
+            <div class='model-card' style='border-top-color: #ff6b6b;'>
+            <h4>🤖 Train Models</h4>
+            <p>Train multiple machine learning models on the loaded data.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Go to Training", key="train_btn"):
+                st.session_state.current_section = "Model Performance"
+                st.rerun()
+    
+    with col3:
+        with st.container():
+            st.markdown("""
+            <div class='model-card' style='border-top-color: #4ecdc4;'>
+            <h4>🔍 Check Facts</h4>
+            <p>Use trained models to analyze new statements for credibility.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Go to Checker", key="check_btn"):
+                st.session_state.current_section = "Fact Checker"
+                st.rerun()
+    
+    # Sample visualization placeholder
+    if st.session_state.scraped_data:
+        st.markdown("### 📈 Sample Insights")
+        scraper = PolitifactScraper()
+        sample_data = scraper.get_comprehensive_sample_data()
+        df = pd.DataFrame(sample_data)
         
         col1, col2 = st.columns(2)
         with col1:
-            start_date = st.date_input("Start Date", datetime(2024, 1, 1))
-        with col2:
-            end_date = st.date_input("End Date", datetime(2024, 1, 15))
+            rating_counts = df['rating'].value_counts()
+            fig = px.pie(values=rating_counts.values, names=rating_counts.index, 
+                        title="Sample Data Distribution")
+            st.plotly_chart(fig, use_container_width=True)
         
-        if st.button("Load Sample Data", type="primary"):
-            with st.spinner("Loading sample data..."):
+        with col2:
+            category_counts = df['category'].value_counts()
+            fig = px.bar(x=category_counts.index, y=category_counts.values,
+                        title="Statements by Category", color=category_counts.index)
+            st.plotly_chart(fig, use_container_width=True)
+
+def show_data_collection():
+    """Enhanced Data Collection Section"""
+    st.markdown('<div class="sub-header">📊 Data Collection</div>', unsafe_allow_html=True)
+    
+    # Date selection with enhanced UI
+    col1, col2, col3 = st.columns([2, 2, 1])
+    with col1:
+        start_date = st.date_input("📅 Start Date", datetime(2024, 1, 1))
+    with col2:
+        end_date = st.date_input("📅 End Date", datetime(2024, 1, 15))
+    
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🚀 Load Sample Data", type="primary", use_container_width=True):
+            with st.spinner("Loading comprehensive sample data..."):
                 scraper = PolitifactScraper()
-                sample_data = scraper.get_sample_data()
+                sample_data = scraper.get_comprehensive_sample_data()
                 
                 if sample_data:
                     st.session_state.scraped_data = sample_data
-                    st.success(f"Successfully loaded {len(sample_data)} sample fact checks!")
+                    st.markdown('<div class="success-box">', unsafe_allow_html=True)
+                    st.success(f"✅ Successfully loaded {len(sample_data)} sample fact checks!")
+                    st.markdown('</div>', unsafe_allow_html=True)
+    
+    if st.session_state.scraped_data:
+        # Enhanced data display
+        st.markdown("### 📋 Data Preview")
         
-        if st.session_state.scraped_data is not None:
-            st.subheader("Data Preview")
+        # Convert to DataFrame for better display
+        df_display = pd.DataFrame(st.session_state.scraped_data)
+        
+        # Style the DataFrame
+        st.dataframe(
+            df_display,
+            use_container_width=True,
+            height=400
+        )
+        
+        # Enhanced statistics with metrics
+        st.markdown("### 📊 Data Statistics")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            total = len(st.session_state.scraped_data)
+            st.markdown(f"""
+            <div class='metric-card'>
+                <h3>📝 Total</h3>
+                <h2>{total}</h2>
+                <p>Statements</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            true_count = len([s for s in st.session_state.scraped_data 
+                            if s['rating'] in ['true', 'mostly-true']])
+            st.markdown(f"""
+            <div class='metric-card' style='background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);'>
+                <h3>✅ True</h3>
+                <h2>{true_count}</h2>
+                <p>Verified Facts</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            false_count = len([s for s in st.session_state.scraped_data 
+                             if s['rating'] in ['false', 'pants-fire', 'mostly-false']])
+            st.markdown(f"""
+            <div class='metric-card' style='background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);'>
+                <h3>❌ False</h3>
+                <h2>{false_count}</h2>
+                <p>Debunked Claims</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            mixed_count = len([s for s in st.session_state.scraped_data 
+                             if s['rating'] in ['half-true']])
+            st.markdown(f"""
+            <div class='metric-card' style='background: linear-gradient(135deg, #ffd93d 0%, #ff9c3d 100%);'>
+                <h3>⚖️ Mixed</h3>
+                <h2>{mixed_count}</h2>
+                <p>Partial Truths</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Visualizations
+        st.markdown("### 📈 Data Overview")
+        df = pd.DataFrame(st.session_state.scraped_data)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            # Rating distribution
+            rating_counts = df['rating'].value_counts()
+            fig = px.pie(
+                values=rating_counts.values, 
+                names=rating_counts.index,
+                title="📊 Rating Distribution",
+                hole=0.3,
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Category distribution
+            category_counts = df['category'].value_counts()
+            fig = px.bar(
+                x=category_counts.values,
+                y=category_counts.index,
+                orientation='h',
+                title="📚 Categories Distribution",
+                color=category_counts.values,
+                color_continuous_scale='Viridis'
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+def show_nlp_analysis():
+    """Enhanced NLP Analysis Section"""
+    st.markdown('<div class="sub-header">🔤 Natural Language Processing Analysis</div>', unsafe_allow_html=True)
+    
+    if st.session_state.scraped_data is None:
+        st.markdown('<div class="warning-box">', unsafe_allow_html=True)
+        st.warning("Please load sample data first in the 'Data Collection' section.")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        if st.button("📥 Load Sample Data Now"):
+            scraper = PolitifactScraper()
+            st.session_state.scraped_data = scraper.get_comprehensive_sample_data()
+            st.rerun()
+    else:
+        analyzer = NLPAnalyzer()
+        
+        # Enhanced statement selection
+        st.markdown("### 🔍 Text Analysis Explorer")
+        
+        statements = [item['statement'] for item in st.session_state.scraped_data]
+        selected_index = st.selectbox(
+            "Select a statement to analyze:",
+            range(len(statements)),
+            format_func=lambda x: f"{statements[x][:80]}..." if len(statements[x]) > 80 else statements[x]
+        )
+        
+        if selected_index is not None:
+            sample_text = statements[selected_index]
+            selected_statement = st.session_state.scraped_data[selected_index]
             
-            # Convert to DataFrame for display
-            df_display = pd.DataFrame(st.session_state.scraped_data)
-            st.dataframe(df_display, use_container_width=True)
-            
-            # Data statistics
-            st.subheader("Data Statistics")
-            col1, col2, col3, col4 = st.columns(4)
+            # Create two main columns
+            col1, col2 = st.columns([2, 1])
             
             with col1:
-                st.metric("Total Statements", len(st.session_state.scraped_data))
+                # Original text display
+                st.markdown("#### 📝 Original Statement")
+                st.markdown(f'<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #667eea;">{sample_text}</div>', 
+                           unsafe_allow_html=True)
+                
+                # Rating information
+                rating = selected_statement['rating']
+                rating_color = {
+                    'true': '#28a745',
+                    'mostly-true': '#20c997',
+                    'half-true': '#ffc107',
+                    'mostly-false': '#fd7e14',
+                    'false': '#dc3545',
+                    'pants-fire': '#dc3545'
+                }.get(rating, '#6c757d')
+                
+                st.markdown(f"""
+                <div style='display: flex; justify-content: space-between; align-items: center; margin: 1rem 0;'>
+                    <span><strong>Rating:</strong></span>
+                    <span style='color: {rating_color}; font-weight: bold; text-transform: uppercase;'>{rating}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Processed text
+                st.markdown("#### 🔧 Processed Text")
+                processed = analyzer.preprocess_text(sample_text)
+                st.markdown(f'<div style="background: #e7f3ff; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #17a2b8;">{processed}</div>', 
+                           unsafe_allow_html=True)
+            
             with col2:
-                true_count = len([s for s in st.session_state.scraped_data 
-                                if any(r in s['rating'] for r in ['true', 'mostly-true', 'half-true'])])
-                st.metric("True Statements", true_count)
+                # Feature analysis visualization
+                st.markdown("#### 📊 Feature Analysis")
+                fig_radar, features, sentiment = create_feature_analysis_visualization(analyzer, sample_text)
+                st.plotly_chart(fig_radar, use_container_width=True)
+            
+            # Detailed features in columns
+            st.markdown("#### 📈 Detailed Analysis")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("##### 📝 Linguistic Features")
+                st.metric("Word Count", features['word_count'])
+                st.metric("Sentence Count", features['sentence_count'])
+                st.metric("Avg Word Length", f"{features['avg_word_length']:.1f}")
+                st.metric("Character Count", features['char_count'])
+            
+            with col2:
+                st.markdown("##### 🎯 Complexity Metrics")
+                st.metric("Unique Word Ratio", f"{features['unique_word_ratio']:.2%}")
+                st.metric("Long Word Ratio", f"{features['long_word_ratio']:.2%}")
+                st.metric("Lexical Diversity", f"{features['lexical_diversity']:.2f}")
+                st.metric("Avg Sentence Length", f"{features['avg_sentence_length']:.1f}")
+            
             with col3:
-                false_count = len([s for s in st.session_state.scraped_data 
-                                 if 'false' in s['rating'] or 'pants-fire' in s['rating']])
-                st.metric("False Statements", false_count)
-            with col4:
-                mixed_count = len(st.session_state.scraped_data) - true_count - false_count
-                st.metric("Mixed Statements", mixed_count)
-    
-    elif app_section == "NLP Analysis":
-        st.markdown('<div class="sub-header">🔤 Natural Language Processing Analysis</div>', unsafe_allow_html=True)
-        
-        if st.session_state.scraped_data is None:
-            st.warning("Please load sample data first in the 'Data Collection' section.")
-            if st.button("Load Sample Data Now"):
-                scraper = PolitifactScraper()
-                st.session_state.scraped_data = scraper.get_sample_data()
-                st.rerun()
-        else:
-            analyzer = NLPAnalyzer()
-            
-            # Show NLP features
-            st.subheader("Text Analysis Features")
-            
-            # Select statement to analyze
-            statements = [item['statement'] for item in st.session_state.scraped_data]
-            selected_index = st.selectbox("Select a statement to analyze:", 
-                                         range(len(statements)),
-                                         format_func=lambda x: statements[x][:100] + "..." if len(statements[x]) > 100 else statements[x])
-            
-            if selected_index is not None:
-                sample_text = statements[selected_index]
+                st.markdown("##### 😊 Sentiment Analysis")
                 
-                col1, col2 = st.columns(2)
+                # Sentiment gauge
+                sentiment_value = sentiment['polarity']
+                sentiment_color = "green" if sentiment_value > 0.1 else "red" if sentiment_value < -0.1 else "orange"
                 
-                with col1:
-                    st.markdown("**Original Text:**")
-                    st.info(sample_text)
-                    
-                    st.markdown("**Processed Text:**")
-                    processed = analyzer.preprocess_text(sample_text)
-                    st.success(processed)
+                fig_gauge = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = sentiment_value,
+                    domain = {'x': [0, 1], 'y': [0, 1]},
+                    title = {'text': "Sentiment Polarity"},
+                    gauge = {
+                        'axis': {'range': [-1, 1]},
+                        'bar': {'color': sentiment_color},
+                        'steps': [
+                            {'range': [-1, -0.1], 'color': "lightgray"},
+                            {'range': [-0.1, 0.1], 'color': "lightyellow"},
+                            {'range': [0.1, 1], 'color': "lightgreen"}
+                        ]
+                    }
+                ))
+                fig_gauge.update_layout(height=200, margin=dict(l=20, r=20, t=50, b=20))
+                st.plotly_chart(fig_gauge, use_container_width=True)
                 
-                with col2:
-                    features = analyzer.extract_features(sample_text)
-                    st.markdown("**Text Features:**")
-                    
-                    # Create metrics for features
-                    feat_col1, feat_col2 = st.columns(2)
-                    with feat_col1:
-                        st.metric("Word Count", features['word_count'])
-                        st.metric("Character Count", features['char_count'])
-                    with feat_col2:
-                        st.metric("Avg Word Length", f"{features['avg_word_length']:.1f}")
-                        st.metric("Sentiment Score", f"{features['sentiment']:.2f}")
-                    
-                    # Sentiment interpretation
-                    sentiment = features['sentiment']
-                    if sentiment > 0.1:
-                        sentiment_label = "😊 Positive"
-                    elif sentiment < -0.1:
-                        sentiment_label = "😠 Negative"
-                    else:
-                        sentiment_label = "😐 Neutral"
-                    
-                    st.write(f"**Sentiment:** {sentiment_label}")
-    
-    elif app_section == "Model Performance":
-        st.markdown('<div class="sub-header">📈 Machine Learning Model Performance</div>', unsafe_allow_html=True)
-        
-        if st.session_state.scraped_data is None:
-            st.warning("Please load sample data first in the 'Data Collection' section.")
-        else:
-            if st.button("Train Models", type="primary"):
-                with st.spinner("Training machine learning models... This may take a few seconds."):
-                    detector = TruthDetector()
-                    X, y, processed_data = detector.prepare_data(st.session_state.scraped_data)
-                    
-                    if X is not None and y is not None:
-                        results = detector.train_models(X, y)
-                        
-                        st.session_state.trained_models = detector
-                        st.session_state.results = results
-                        
-                        if results:
-                            st.success("Models trained successfully!")
-                        else:
-                            st.error("No models were successfully trained.")
-                    else:
-                        st.error("Could not prepare data for training.")
-            
-            if st.session_state.results:
-                # Display results
-                st.subheader("Model Performance Results")
-                
-                # Create visualizations
-                fig1, fig2, fig3 = create_visualizations(
-                    st.session_state.results, 
-                    pd.DataFrame(st.session_state.scraped_data)
-                )
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.plotly_chart(fig1, use_container_width=True)
-                with col2:
-                    st.plotly_chart(fig2, use_container_width=True)
-                
-                st.plotly_chart(fig3, use_container_width=True)
-                
-                # Model comparison table
-                st.subheader("Detailed Performance Metrics")
-                performance_data = []
-                for model_name, result in st.session_state.results.items():
-                    performance_data.append({
-                        'Model': model_name,
-                        'Accuracy': f"{result['accuracy']:.3f}",
-                        'Status': '✅ Trained'
-                    })
-                
-                st.dataframe(pd.DataFrame(performance_data), use_container_width=True)
-                
-                # Best model info
-                best_model = max(st.session_state.results.items(), key=lambda x: x[1]['accuracy'])
-                st.info(f"🎯 **Best Performing Model:** {best_model[0]} (Accuracy: {best_model[1]['accuracy']:.3f})")
-    
-    elif app_section == "Fact Checker":
-        st.markdown('<div class="sub-header">🔍 Fact Checking Tool</div>', unsafe_allow_html=True)
-        
-        if st.session_state.trained_models is None:
-            st.warning("Please train the models first in the 'Model Performance' section.")
-            
-            if st.button("Train Models Now"):
-                with st.spinner("Training models..."):
-                    detector = TruthDetector()
-                    X, y, _ = detector.prepare_data(st.session_state.scraped_data)
-                    detector.train_models(X, y)
-                    st.session_state.trained_models = detector
-                    st.session_state.results = detector.results
-                st.rerun()
-        else:
-            st.markdown("### Check Statement Credibility")
-            
-            # User input
-            user_statement = st.text_area(
-                "Enter a statement to check:", 
-                "The Earth revolves around the Sun.",
-                height=100
-            )
-            
-            selected_model = st.selectbox(
-                "Select NLP Model for Analysis:",
-                list(st.session_state.trained_models.models.keys())
-            )
-            
-            if st.button("Analyze Credibility", type="primary"):
-                if not user_statement.strip():
-                    st.error("Please enter a statement to analyze.")
-                else:
-                    with st.spinner("Analyzing statement..."):
-                        # Preprocess and predict
-                        analyzer = NLPAnalyzer()
-                        processed_text = analyzer.preprocess_text(user_statement)
-                        
-                        try:
-                            # Vectorize text
-                            X_text = st.session_state.trained_models.vectorizer.transform([processed_text])
-                            
-                            # Add features
-                            features = analyzer.extract_features(user_statement)
-                            X_features = np.array([[features['word_count'], features['char_count'], 
-                                                  features['avg_word_length'], features['sentiment']]])
-                            
-                            X_combined = np.hstack([X_text.toarray(), X_features])
-                            
-                            # Predict
-                            model = st.session_state.trained_models.results[selected_model]['model']
-                            prediction = model.predict(X_combined)[0]
-                            probability = model.predict_proba(X_combined)[0][prediction]
-                            
-                            # Display results
-                            st.markdown('<div class="fact-check-card">', unsafe_allow_html=True)
-                            
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                verdict = "✅ LIKELY TRUE" if prediction == 1 else "❌ LIKELY FALSE"
-                                color = "green" if prediction == 1 else "red"
-                                st.markdown(f"### <span style='color:{color}'>{verdict}</span>", unsafe_allow_html=True)
-                                st.metric("Confidence Score", f"{probability:.2%}")
-                                st.write(f"**Model Used:** {selected_model}")
-                            
-                            with col2:
-                                features = analyzer.extract_features(user_statement)
-                                st.write("**Analysis Details:**")
-                                st.write(f"- 📝 Word Count: {features['word_count']}")
-                                st.write(f- "😊 Sentiment: {features['sentiment']:.2f}")
-                                st.write(f"- 🔤 Characters: {features['char_count']}")
-                                st.write(f"- 📏 Avg Word Length: {features['avg_word_length']:.1f}")
-                            
-                            st.markdown('</div>', unsafe_allow_html=True)
-                            
-                            # Humorous critique
-                            humorous_verdict = generate_humorous_critique(user_statement, prediction, probability)
-                            st.markdown(f'<div class="humor-section">{humorous_verdict}</div>', unsafe_allow_html=True)
-                            
-                            # Credibility assessment
-                            st.subheader("🔍 Credibility Assessment")
-                            
-                            credibility_score = probability if prediction == 1 else 1 - probability
-                            
-                            if credibility_score > 0.8:
-                                assessment = "**High Credibility** - This statement appears reliable based on our analysis."
-                                icon = "🟢"
-                            elif credibility_score > 0.6:
-                                assessment = "**Moderate Credibility** - This statement seems plausible but verify with additional sources."
-                                icon = "🟡"
-                            else:
-                                assessment = "**Low Credibility** - Exercise caution and verify this statement with trusted sources."
-                                icon = "🔴"
-                            
-                            st.info(f"{icon} {assessment}")
-                            
-                            # Progress bar for credibility score
-                            st.write(f"**Overall Credibility Score:** {credibility_score:.2%}")
-                            st.progress(float(credibility_score))
-                            
-                            # User guidance
-                            st.markdown("---")
-                            st.subheader("📋 Fact-Checking Guidance")
-                            st.markdown("""
-                            When evaluating statements, consider:
-                            - **Source Reliability**: Where did this information originate?
-                            - **Corroboration**: Do other reputable sources confirm this?
-                            - **Evidence**: Is there scientific or verifiable evidence?
-                            - **Logical Consistency**: Does this make logical sense?
-                            - **Expert Consensus**: What do experts in the field say?
-                            """)
-                            
-                        except Exception as e:
-                            st.error(f"Error during analysis: {str(e)}")
-                            st.info("Please try training the models again or use a different statement.")
-    
-    else:  # About section
-        st.markdown('<div class="sub-header">ℹ️ About TruthDetector AI</div>', unsafe_allow_html=True)
-        
-        st.markdown("""
-        ### How It Works
-        
-        **TruthDetector AI** uses advanced Natural Language Processing and Machine Learning to analyze statements and assess their credibility.
-        
-        ### Methodology
-        
-        1. **Data Collection**: Uses sample fact-checked statements (Politifact-style)
-        2. **NLP Processing**: Analyzes text features, sentiment, and linguistic patterns
-        3. **Machine Learning**: Trains multiple models to detect truth patterns
-        4. **Credibility Assessment**: Provides confidence scores and insights
-        
-        ### Models Used
-        
-        - **Decision Tree**: Rule-based classification
-        - **Logistic Regression**: Statistical probability modeling  
-        - **Naive Bayes**: Probabilistic classification
-        - **SVM**: Advanced pattern recognition
-        
-        ### Technical Features
-        
-        - **Text Preprocessing**: Tokenization, stopword removal, feature extraction
-        - **Sentiment Analysis**: Emotional tone assessment using TextBlob
-        - **Feature Engineering**: Word counts, character counts, average word length
-        - **Model Evaluation**: Accuracy scores, confusion matrices, performance comparison
-        
-        ### Important Notes
-        
-        🔒 **This is a demonstration app** for educational purposes
-        📊 **Sample data** is used instead of live scraping for reliability
-        🤖 **AI limitations**: Models are trained on limited sample data
-        🔍 **Always verify** important information through multiple reliable sources
-        
-        ### User Prompt for Fact Checking
-        
-        When evaluating information credibility, ask yourself:
-        
-        - ❓ **Source**: Who is sharing this information and what's their expertise?
-        - ❓ **Evidence**: What verifiable evidence supports this claim?
-        - ❓ **Consensus**: Do experts in the field generally agree on this?
-        - ❓ **Logic**: Does this claim make logical sense?
-        - ❓ **Bias**: Could there be any agenda or bias influencing this information?
-        - ❓ **Corroboration**: Can this be verified through multiple independent sources?
-        """)
+                st.metric("Subjectivity", f"{sentiment['subjectivity']:.2f}")
+                st.metric("Sentiment Label", sentiment['label'])
 
-if __name__ == "__main__":
-    main()
+# Due to character limits, I'll continue with the remaining functions in the next response
+# Let me know if you'd like me to continue with the Model Performance, Fact Checker, and About sections
