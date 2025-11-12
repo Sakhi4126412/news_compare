@@ -3,69 +3,95 @@ import requests
 import pandas as pd
 import os
 
-# ------------------------------------------------------
-# ✅ Load API key safely (works both locally & in Streamlit Cloud)
-# ------------------------------------------------------
-API_KEY = st.secrets.get("GOOGLE_FACTCHECK_API_KEY", os.getenv("GOOGLE_FACTCHECK_API_KEY"))
+# ----------------------------------------
+# App configuration
+# ----------------------------------------
+st.set_page_config(page_title="News Truth Comparison", layout="wide")
+st.title("📰 News Truthfulness Comparison App")
+st.write("Compare fact-check results from multiple sources using the **Google Fact Check Tools API**.")
+
+# ----------------------------------------
+# Secure API key handling
+# ----------------------------------------
+API_KEY = None
+if "GOOGLE_FACTCHECK_API_KEY" in st.secrets:
+    API_KEY = st.secrets["GOOGLE_FACTCHECK_API_KEY"]
+elif os.getenv("GOOGLE_FACTCHECK_API_KEY"):
+    API_KEY = os.getenv("GOOGLE_FACTCHECK_API_KEY")
 
 if not API_KEY:
     st.error("🚨 Google Fact Check API key not found. Please add it in `.streamlit/secrets.toml` or as an environment variable.")
     st.stop()
 
-# ------------------------------------------------------
-# App Title and Description
-# ------------------------------------------------------
-st.title("📰 Fact Check Comparison App")
-st.write("""
-Compare the truthfulness of news from two different fact-checker APIs.
-Enter a statement or headline, and we'll check its credibility using Google's Fact Check API and another API.
-""")
+# ----------------------------------------
+# Input section
+# ----------------------------------------
+user_query = st.text_input("🔍 Enter a statement or claim to verify:", "")
 
-# ------------------------------------------------------
-# User Input
-# ------------------------------------------------------
-statement = st.text_input("Enter a news statement or claim:")
+# ----------------------------------------
+# Fact-checking logic
+# ----------------------------------------
+if user_query:
+    st.info(f"Searching fact-checks for: **{user_query}** ...")
 
-# ------------------------------------------------------
-# Function to fetch from Google Fact Check API
-# ------------------------------------------------------
-def fetch_google_factcheck(claim):
-    url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?query={claim}&key={API_KEY}"
-    response = requests.get(url)
-    if response.status_code != 200:
-        return f"Error fetching from Google API: {response.status_code}"
+    api_url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?query={user_query}&key={API_KEY}"
 
-    data = response.json().get("claims", [])
-    results = []
-    for claim in data:
-        results.append({
-            "Claim": claim.get("text", "N/A"),
-            "Rating": claim.get("claimReview", [{}])[0].get("textualRating", "N/A"),
-            "Publisher": claim.get("claimReview", [{}])[0].get("publisher", {}).get("name", "N/A"),
-            "URL": claim.get("claimReview", [{}])[0].get("url", "N/A")
-        })
-    return pd.DataFrame(results) if results else None
+    try:
+        response = requests.get(api_url)
+        response.raise_for_status()
+        data = response.json()
 
-# ------------------------------------------------------
-# Placeholder: Second API (You can integrate another later)
-# ------------------------------------------------------
-def fetch_other_factcheck(claim):
-    # Example dummy data
-    return pd.DataFrame([
-        {"Claim": claim, "Rating": "Likely True", "Publisher": "OtherFactCheckAPI", "URL": "https://example.com"}
-    ])
+        # Debug info (optional)
+        # st.write("Raw API Response:", data)
 
-# ------------------------------------------------------
-# Run Fact Check
-# ------------------------------------------------------
-if st.button("🔍 Check Truthfulness") and statement:
-    st.subheader("Google Fact Check Results")
-    google_df = fetch_google_factcheck(statement)
-    if google_df is not None:
-        st.dataframe(google_df)
-    else:
-        st.info("No results found in Google Fact Check API.")
+        # Check for claims
+        if "claims" in data and data["claims"]:
+            results = []
+            for claim in data["claims"]:
+                text = claim.get("text", "N/A")
+                claimant = claim.get("claimant", "Unknown")
+                date = claim.get("claimDate", "N/A")
 
-    st.subheader("Other Fact Check Results")
-    other_df = fetch_other_factcheck(statement)
-    st.dataframe(other_df)
+                for review in claim.get("claimReview", []):
+                    publisher = review.get("publisher", {}).get("name", "N/A")
+                    title = review.get("title", "N/A")
+                    url = review.get("url", "N/A")
+                    rating = review.get("textualRating", "N/A")
+
+                    results.append({
+                        "Statement": text,
+                        "Claimant": claimant,
+                        "Date": date,
+                        "Source": publisher,
+                        "Review Title": title,
+                        "Rating": rating,
+                        "URL": url
+                    })
+
+            if results:
+                google_df = pd.DataFrame(results)
+
+                # Display table safely
+                if not google_df.empty:
+                    st.success("✅ Results found!")
+                    st.dataframe(google_df, use_container_width=True)
+
+                    # Summary comparison
+                    st.subheader("📊 Comparison Summary (by Source)")
+                    summary = (
+                        google_df.groupby("Source")["Rating"]
+                        .apply(lambda x: x.mode()[0] if not x.mode().empty else "N/A")
+                        .reset_index()
+                    )
+                    st.table(summary)
+                else:
+                    st.warning("⚠️ No detailed reviews found for this statement.")
+            else:
+                st.warning("⚠️ No claim review data available in the API response.")
+        else:
+            st.warning("⚠️ No fact-check results found for this query.")
+
+    except requests.exceptions.HTTPError as http_err:
+        st.error(f"❌ HTTP Error: {http_err}")
+    except Exception as e:
+        st.error(f"⚠️ Unexpected Error: {e}")
